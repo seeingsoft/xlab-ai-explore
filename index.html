@@ -273,6 +273,7 @@ const WEEK = '日一二三四五六';
 const md = ds => { const [,m,d] = ds.split('-'); return `${+m}月${+d}日`; };
 const wk = ds => '星期' + WEEK[new Date(ds+'T12:00:00').getDay()];
 const TOTAL_CARDS = DAYS.reduce((n,d)=>n+d.cards.length,0);
+const thumbOf = p => p ? String(p).replace(/^assets\//, 'assets/thumbs/') : p;
 
 /* uid 体系：日期#序号 */
 const uidOf = (date, i) => date + '#' + i;
@@ -343,7 +344,7 @@ function bigCard(c, uid, showDate){
   </article>`;
 }
 function miniCard(c, uid){
-  const img = c.image ? `<img src="${esc(c.image)}" alt="${esc(c.title)}插图" loading="lazy">`
+  const img = c.image ? `<img src="${esc(thumbOf(c.image))}" alt="${esc(c.title)}插图" loading="lazy" decoding="async">`
     : `<div class="noimg">${esc(c.emoji||'🤖')}${c.needImage?'<small>插图整理中</small>':''}</div>`;
   const go = `location.hash='#c/${esc(encodeURIComponent(uid))}'`;
   return `<article class="mini">
@@ -546,7 +547,7 @@ function viewStarred(){
     <div class="sec"><span class="ic">⭐</span><h2>收藏夹</h2></div>
     ${stars.length ? stars.map(c=>{
       return `<article class="mini">
-        ${c.image?`<img src="${esc(c.image)}" alt="" loading="lazy">`:`<div class="noimg">${esc(c.emoji||'🤖')}</div>`}
+        ${c.image?`<img src="${esc(thumbOf(c.image))}" alt="" loading="lazy" decoding="async">`:`<div class="noimg">${esc(c.emoji||'🤖')}</div>`}
         <div style="flex:1">
           <h4 class="clicky" onclick='location.hash="#c/${esc(encodeURIComponent(c.uid))}"'>${esc(c.title)}</h4><span class="badge">${esc(c.date)}</span>
           <div class="oneliner clicky" onclick='location.hash="#c/${esc(encodeURIComponent(c.uid))}"'>${esc((c.what||'').slice(0,90))}…</div>
