@@ -278,6 +278,7 @@ const NAV = [
   {hash:'about',    ic:'💡', label:'关于'},
 ];
 const esc = s => {const d=document.createElement('div'); d.textContent=(s==null?'':String(s)); return d.innerHTML;};
+const paras = (src, st) => (src||'').split(/\n+/).map(s=>s.trim()).filter(Boolean).map(p=>`<p style="${st}">${esc(p)}</p>`).join('');
 const CATS = ['全部','模型','产品','行业','论文','教程','观点'];
 const WEEK = '日一二三四五六';
 const md = ds => { const [,m,d] = ds.split('-'); return `${+m}月${+d}日`; };
@@ -415,7 +416,7 @@ function bigCard(c, uid, showDate){
   return `<article class="card">
     <div class="head"><span class="emoji">${esc(c.emoji)}</span><h3>${esc(c.title)}${c.category?`<span class="badge">${esc(c.category)}</span>`:''}${showDate?`<span class="badge" style="background:var(--sun-soft);color:#8a5a20">${esc(showDate)}</span>`:''}</h3>${starBtn(uid)}</div>
     ${c.image?`<img class="cover" src="${esc(c.image)}" alt="${esc(c.title)}的漫画插图" loading="lazy">`:''}
-    <div class="blk b-what"><span class="tag">📰 发生了什么大事</span><p>${esc(c.what)}</p></div>
+    <div class="blk b-what"><span class="tag">📰 发生了什么大事</span>${paras(c.body||c.what, 'margin:0 0 9px')}</div>
     <div class="blk b-why"><span class="tag">💡 为什么和你有关</span><p>${esc(c.why)}</p></div>
     ${c.featured_reason?`<div class="tl-reason" style="margin:2px 0 6px"><b>推荐理由：</b>${esc(c.featured_reason)}</div>`:''}
     <div class="blk b-task"><span class="tag">🛠️ 你可以动手做什么</span>
@@ -586,14 +587,13 @@ function viewHotCard(rankStr){
   if (!h) { setTimeout(()=>location.hash='#hot', 600); return '<div class="empty">热点不存在，正在返回榜单…</div>'; }
   const link = h.story || h.aihot;
   const bodySrc = h.body || h.summary || h.detail || '';
-  const paras = bodySrc.split(/\n+/).map(s=>s.trim()).filter(Boolean);
   return heroHead(`🔥 ${esc(h.one_line)}`,
     `48 小时热议 · 第 ${esc(h.rank)} 名 · ${esc(h.sources||'?')} 个来源 · ${esc(h.participants||'?')} 人在聊`)
   + `<main class="wrap">
     <div class="sec"><span class="ic">🔥</span><h2>热点详情</h2><span class="note"><a href="javascript:history.back()" style="color:var(--sky)">← 返回热点榜</a></span></div>
     <article class="card">
       <div class="tl-reason" style="border-top:none;margin-bottom:12px"><b>大家讨论的原话题：</b>${esc(h.title)}</div>
-      ${paras.length?`<div class="blk b-what"><span class="tag">📰 这是怎么回事</span>${paras.map(p=>`<p style="margin:0 0 9px">${esc(p)}</p>`).join('')}</div>`:''}
+      ${bodySrc.trim()?`<div class="blk b-what"><span class="tag">📰 这是怎么回事</span>${paras(bodySrc, 'margin:0 0 9px')}</div>`:''}
       ${h.kid_why?`<div class="blk b-why"><span class="tag">💡 为什么和你有关</span><p>${esc(h.kid_why)}</p></div>`:''}
       <div class="tl-reason" style="margin:4px 0 10px"><b>上榜理由：</b>过去 48 小时里，${esc(h.sources||'多个')} 个不同来源、${esc(h.participants||'许多')} 位参与者都在讨论这件事（AI HOT 按讨论热度排名）。</div>
       ${h.media&&h.media.length?`<div class="tl-reason" style="border-top:none;margin-bottom:10px"><b>正在讨论它的媒体：</b>${esc(h.media.join('、'))}</div>`:''}
