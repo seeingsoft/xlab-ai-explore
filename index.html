@@ -11,7 +11,7 @@
     --canvas:#f7f6ff; --ink:#2a2550; --muted:#6a6788;
     --sun:#ff9f43; --sun-soft:#fff3e3; --sky:#3b82c4; --sky-soft:#e5f2fb;
     --leaf:#3a9e6e; --leaf-soft:#e4f5ec; --card:#ffffff; --line:#e6e2f7;
-    --sbw:224px;
+    --sbw:224px; --topbar-h:0px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -73,8 +73,38 @@
   .jumpbar select{border:2px solid var(--line); border-radius:12px; padding:8px 12px; font-size:14px;
                  background:#fff; color:var(--ink); font-weight:600; max-width:260px;}
   .dayblock{margin-bottom:34px;}
-  .dayhead{display:flex; align-items:baseline; gap:10px; margin-bottom:12px; padding-bottom:8px;
-           border-bottom:2px solid var(--line);}
+  .dayhead{display:flex; align-items:baseline; gap:10px; margin-bottom:14px; padding:8px 10px 8px;
+           border-bottom:2px solid var(--line); position:sticky; top:var(--topbar-h); z-index:10;
+           background:var(--canvas);}
+
+  /* ═══ aihot 式精选时间轴 ═══ */
+  .hotstrip{display:flex; gap:8px; overflow-x:auto; padding:2px 0 12px;}
+  .hotstrip .hs{flex:0 0 auto; display:flex; align-items:center; gap:8px; background:#fff; border:2px solid var(--line);
+                border-radius:99px; padding:4px 14px 4px 5px; font-size:13px; font-weight:600; text-decoration:none; color:var(--ink);}
+  .hotstrip .hs .r{width:22px; height:22px; border-radius:99px; background:var(--sun); color:#5a3a10;
+                   font-weight:900; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;}
+  .hotstrip .hs span.t{white-space:nowrap; max-width:230px; overflow:hidden; text-overflow:ellipsis;}
+  .tl-item{position:relative; margin:0 0 16px 64px; padding:12px 16px; background:#fff;
+           border:2px solid var(--line); border-radius:14px;}
+  .tl-item::after{content:''; position:absolute; left:-33px; top:-16px; bottom:-16px; width:2px; background:var(--line);}
+  .tl-item:last-child::after{bottom:auto; height:30px;}
+  .tl-item::before{content:''; position:absolute; left:-38px; top:16px; width:10px; height:10px;
+                   border-radius:99px; background:var(--purple); box-shadow:0 0 0 3px var(--purple-soft); z-index:1;}
+  .tl-when{position:absolute; left:-64px; top:12px; width:48px; text-align:right; font-size:13px; font-weight:800; color:var(--muted);}
+  .tl-meta{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+  .tl-badge{font-size:11px; font-weight:800; color:#fff; background:var(--purple); border-radius:99px; padding:1px 9px;}
+  .tl-badge.score{background:var(--sun); color:#5a3a10;}
+  .tl-meta .star{margin-left:auto; font-size:19px;}
+  .tl-title{font-size:16.5px; font-weight:800; color:var(--ink); margin:7px 0 4px; cursor:pointer; line-height:1.5;}
+  .tl-title:hover{color:var(--purple-deep); text-decoration:underline;}
+  .tl-sum{font-size:14.5px; color:var(--ink); line-height:1.72; margin:0 0 9px; cursor:pointer;}
+  .tl-sum:hover{color:var(--purple-deep);}
+  .tl-reason{font-size:12.5px; color:var(--muted); border-top:1px dashed var(--line); padding-top:7px; line-height:1.6;}
+  .tl-reason b{color:var(--purple);}
+  h4.clicky{cursor:pointer;}
+  h4.clicky:hover{color:var(--purple); text-decoration:underline;}
+  .oneliner.clicky{cursor:pointer;}
+  .oneliner.clicky:hover{color:var(--purple-deep);}
   .dayhead .d{font-size:20px; font-weight:900; color:var(--purple-deep);}
   .dayhead .w{font-size:13px; color:var(--muted);}
   .dayhead .n{margin-left:auto; font-size:12.5px; color:var(--muted); background:#fff;
@@ -176,6 +206,11 @@
     .main{margin-left:0;}
     .mobilebar{display:flex;}
     .bottomnav{display:flex;}
+    :root{--topbar-h:52px;}
+    .tl-item{margin-left:40px; padding:10px 12px;}
+    .tl-item::after{left:-24px;}
+    .tl-item::before{left:-29px;}
+    .tl-when{left:-40px; width:32px; font-size:11px;}
     .card{padding:18px 15px 13px;}
     body{font-size:15.5px;}
     footer{margin-bottom:76px;}
@@ -309,11 +344,12 @@ function bigCard(c, uid, showDate){
 function miniCard(c, uid){
   const img = c.image ? `<img src="${esc(c.image)}" alt="${esc(c.title)}插图" loading="lazy">`
     : `<div class="noimg">${esc(c.emoji||'🤖')}${c.needImage?'<small>插图整理中</small>':''}</div>`;
+  const go = `location.hash='#c/${esc(encodeURIComponent(uid))}'`;
   return `<article class="mini">
     ${img}
     <div style="flex:1">
-      <h4>${esc(c.title)}</h4>${c.category?`<span class="badge">${esc(c.category)}</span>`:''} ${starBtn(uid)}
-      <div class="oneliner">${esc((c.what||'').slice(0,90))}…</div>
+      <h4 class="clicky" onclick='${go}'>${esc(c.title)}</h4>${c.category?`<span class="badge">${esc(c.category)}</span>`:''} ${starBtn(uid)}
+      <div class="oneliner clicky" onclick='${go}'>${esc((c.what||'').slice(0,90))}…</div>
       <div class="meta">
         <span>🛠️ ${esc(c.task_basic||'')}</span>
         <a class="btn btn-orig" style="padding:2px 10px;font-size:12px" href="${esc(c.original_url)}" target="_blank" rel="noopener noreferrer">原文↗</a>
@@ -322,6 +358,34 @@ function miniCard(c, uid){
       </div>
     </div>
   </article>`;
+}
+
+/* aihot 式精选时间轴条目（纯文字流，点标题/摘要进详情） */
+function tlItem(c, uid, i){
+  const go = `location.hash='#c/${esc(encodeURIComponent(uid))}'`;
+  return `<article class="tl-item">
+    <div class="tl-when">${String(i+1).padStart(2,'0')}</div>
+    <div class="tl-meta"><span class="tl-badge">⭐ 编辑精选</span><span>来源：${esc(c.source_name||'')}</span>${c.category?`<span class="badge" style="margin-left:0">${esc(c.category)}</span>`:''}${starBtn(uid)}</div>
+    <div class="tl-title" onclick='${go}'>${esc(c.title)}</div>
+    <div class="tl-sum" onclick='${go}'>${esc(c.what)}</div>
+    <div class="tl-reason"><b>推荐理由：</b>${esc(c.featured_reason || c.why || '')}</div>
+  </article>`;
+}
+
+/* 详情内页 */
+function viewCard(uid){
+  const f = findCard(uid);
+  if (!f) { setTimeout(()=>location.hash='#featured', 600); return '<div class="empty">卡片不存在，正在返回精选页…</div>'; }
+  const c = f.card;
+  const sameDay = f.day.cards.filter((x,i)=>i!==f.idx);
+  return heroHead(`${esc(c.emoji||'🤖')} ${esc(c.title)}`,
+    `${esc(md(f.day.date))} ${esc(wk(f.day.date))} · 来源：${esc(c.source_name||'')}${c.category?` · ${esc(c.category)}`:''}`)
+  + `<main class="wrap">
+    <div class="sec"><span class="ic">🔍</span><h2>探索卡详情</h2><span class="note"><a href="javascript:history.back()" style="color:var(--sky)">← 返回时间轴</a></span></div>
+    ${bigCard(c, uid, f.day.date!==TODAY.date ? md(f.day.date) : '')}
+    ${sameDay.length ? `<div class="sec"><span class="ic">📑</span><h2>同一天的探索卡</h2></div>
+    <div>${sameDay.map(x=>miniCard(x, uidOf(f.day.date, f.day.cards.indexOf(x)))).join('')}</div>` : ''}
+  </main>`;
 }
 
 /* ── 视图 ── */
@@ -337,21 +401,31 @@ function heroHead(title, sub, extra=''){
 }
 
 function viewFeatured(){
-  const featured = TODAY.cards.slice(0, 4);
+  const hot5 = (DATA.hot||[]).slice(0,5);
+  const picksDays = REVERSED.map(d => ({date:d.date, cards:d.cards, picks:d.cards.slice(0, Math.min(4, d.cards.length))}));
   return heroHead(`xLab-AI 探索报 <span class="iss">第 ${DATA.issue||1} 期</span>`,
     '每天 3 分钟，看懂 AI 界的大事 —— 发生了什么 · 为什么和你有关 · 你可以动手做什么',
     `<div class="chips"><span class="chip">📅 ${esc(TODAY.date)}</span><span class="chip">🃏 今日 ${TODAY.cards.length} 张卡</span><span class="chip">🗂️ 时间轴已收录 ${TOTAL_CARDS} 张</span></div>
      <div class="strip">✦ 每张探索卡由 AI 从当日新闻自动转译，可能有错误，欢迎纠错 ✦ 原始新闻是给大人看的，点开前请家长陪同 ✦</div>`)
   + `<main class="wrap">
-    <div class="sec"><span class="ic">🗂️</span><h2>今日精选</h2><span class="note">每日最佳 · 主文案 10-12 岁可读</span></div>
-    ${featured.length ? featured.map((c,i)=>bigCard(c, uidOf(TODAY.date, i))).join('') : '<div class="empty">今天的第一批探索卡正在路上！</div>'}
-    ${TODAY.cards.length > 4 ? `<div class="sec"><span class="ic">📋</span><h2>还有这些</h2><span class="note"><a href="#all" style="color:var(--sky)">看今日与往日全部 ${TOTAL_CARDS} 张 →</a></span></div>
-      <div>${TODAY.cards.slice(4).map((c,i)=>miniCard(c, uidOf(TODAY.date, i+4))).join('')}</div>` : ''}
-    <div class="sec"><span class="ic">📡</span><h2>家长角</h2><span class="note">今日原始新闻雷达 · 实时（给大人看）</span></div>
-    <details class="card" style="padding:16px 20px"><summary style="cursor:pointer;font-weight:700;color:var(--sky)">📡 展开：AI HOT 当日原始新闻雷达</summary>
-      <div id="radar" style="margin-top:12px"><div class="empty">雷达连线中…</div></div>
-    </details>
+    <div class="sec"><span class="ic">🔥</span><h2>当前热点</h2><span class="note"><a href="#hot" style="color:var(--sky)">完整榜单 →</a></span></div>
+    ${hot5.length ? `<div class="hotstrip">${hot5.map(h=>`<a class="hs" href="#hot"><span class="r">${esc(h.rank)}</span><span class="t">${esc((h.one_line||'').slice(0,20))}</span></a>`).join('')}</div>` : ''}
+    <div class="sec"><span class="ic">🗂️</span><h2>精选时间轴</h2><span class="note">每天最值得看的 4 条 · 点标题或摘要看详情</span></div>
+    ${picksDays.filter(d=>d.picks.length).map(d=>`
+      <div class="dayblock" id="day-${d.date}">
+        <div class="dayhead"><span class="d">📅 ${esc(md(d.date))}</span><span class="w">${esc(wk(d.date))}</span><span class="n">${d.picks.length} 条精选</span></div>
+        ${d.picks.map((c)=>tlItem(c, uidOf(d.date, d.cards.indexOf(c)), d.picks.indexOf(c))).join('')}
+      </div>`).join('')}
+    <div class="empty" style="border-style:solid">每天转译 ${'6-10'} 条，这里只放最值得看的 4 条 · <a href="#all" style="color:var(--sky)">看全部 ${TOTAL_CARDS} 张 →</a> · <a href="javascript:void(0)" onclick="loadRadarInto(this)" style="color:var(--sky)">家长角（原始新闻雷达）</a></div>
+    <div id="radar"></div>
   </main>`;
+}
+function loadRadarInto(el){
+  const box = document.getElementById('radar');
+  if (box){ box.className = 'card'; box.style.padding = '16px 20px'; box.style.marginTop = '10px';
+            box.innerHTML = '<div class="empty">📡 雷达连线中…</div>'; }
+  el.style.pointerEvents = 'none';
+  loadRadar();
 }
 
 function viewAll(){
@@ -509,19 +583,20 @@ async function loadRadar(){
 }
 
 /* ── 路由 ── */
-function currentHash(){
-  const h = location.hash.replace('#','') || 'featured';
-  return NAV.some(n=>n.hash===h) ? h : 'featured';
+function currentRoute(){
+  const h = location.hash.slice(1);
+  if (h.startsWith('c/')) return {view:'card', uid: decodeURIComponent(h.slice(2))};
+  const v = h || 'featured';
+  return {view: NAV.some(n=>n.hash===v) ? v : 'featured'};
 }
 function render(){
-  const h = currentHash();
+  const r = currentRoute();
   const views = {featured:viewFeatured, all:viewAll, hot:viewHot, daily:viewDaily, starred:viewStarred, about:viewAbout};
-  document.getElementById('view').innerHTML = (views[h]||viewFeatured)();
-  document.querySelectorAll('.nav a, .bottomnav a').forEach(a=>a.classList.toggle('on', a.dataset.hash===h));
+  document.getElementById('view').innerHTML = r.view === 'card' ? viewCard(r.uid) : (views[r.view]||viewFeatured)();
+  document.querySelectorAll('.nav a, .bottomnav a').forEach(a=>a.classList.toggle('on', a.dataset.hash===r.view));
   document.getElementById('sb-issue').textContent = DATA.issue||1;
   document.getElementById('sb-days').textContent = DAYS.length;
   const mb = document.getElementById('mb-issue'); if (mb) mb.textContent = '第 ' + (DATA.issue||1) + ' 期 · ' + DAYS.length + ' 天';
-  if (h==='featured') loadRadar();
   window.scrollTo(0,0);
 }
 document.getElementById('nav').innerHTML = NAV.map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
