@@ -379,6 +379,7 @@ function playNextInDay(){
   const annSrc = `assets/audio/ann-${s.kind}-${String(s.i+1).padStart(2,'0')}.mp3`;
   playClip(annSrc, ()=>{
     if (!daySession || !daySession.active) return;
+    document.querySelectorAll('.playing-now').forEach(x=>x.classList.remove('playing-now'));
     const row = document.querySelector(`[data-uid="${CSS.escape(uid)}"]`);
     if (row){ row.classList.add('playing-now'); row.scrollIntoView({behavior:'smooth', block:'center'}); }
     const f = findCard(uid);
