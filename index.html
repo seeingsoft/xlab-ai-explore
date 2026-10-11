@@ -316,6 +316,10 @@ document.addEventListener('click', e=>{
   synth.speak(u);
 });
 document.addEventListener('click', e=>{
+  const g = e.target.closest('[data-go]');
+  if (g && !e.target.closest('button, a, [data-star], [data-unstar]')) { location.hash = g.dataset.go; }
+});
+document.addEventListener('click', e=>{
   const s = e.target.closest('[data-star]');
   if (s) toggleStar(s.dataset.star);
 });
@@ -346,13 +350,13 @@ function bigCard(c, uid, showDate){
 function miniCard(c, uid){
   const img = c.image ? `<img src="${esc(thumbOf(c.image))}" alt="${esc(c.title)}插图" loading="lazy" decoding="async">`
     : `<div class="noimg">${esc(c.emoji||'🤖')}${c.needImage?'<small>插图整理中</small>':''}</div>`;
-  const go = `location.hash='#c/${esc(encodeURIComponent(uid))}'`;
+  const go = ` data-go="#c/${esc(encodeURIComponent(uid))}"`;
   return `<article class="mini">
     ${img}
     <div style="flex:1">
-      <h4 class="clicky" onclick='${go}'>${esc(c.title)}</h4>${c.category?`<span class="badge">${esc(c.category)}</span>`:''} ${starBtn(uid)}
-      <div class="oneliner clicky" onclick='${go}'>${esc((c.what||'').slice(0,90))}…</div>
-      ${c.featured_reason?`<div class="tl-reason" style="border-top:none;padding-top:2px;margin:-4px 0 4px"><b>推荐理由：</b>${esc(c.featured_reason.slice(0,60))}</div>`:''}
+      <h4 class="clicky"${go}>${esc(c.title)}</h4>${c.category?`<span class="badge">${esc(c.category)}</span>`:''} ${starBtn(uid)}
+      <div class="oneliner clicky"${go}>${esc((c.what||'').slice(0,90))}…</div>
+      ${c.featured_reason?`<div class="tl-reason clicky"${go} style="border-top:none;padding-top:2px;margin:-4px 0 4px"><b>推荐理由：</b>${esc(c.featured_reason.slice(0,60))}</div>`:''}
       <div class="meta">
         <span>🛠️ ${esc(c.task_basic||'')}</span>
         <a class="btn btn-orig" style="padding:2px 10px;font-size:12px" href="${esc(c.original_url)}" target="_blank" rel="noopener noreferrer">原文↗</a>
@@ -363,15 +367,15 @@ function miniCard(c, uid){
   </article>`;
 }
 
-/* aihot 式精选时间轴条目（纯文字流，点标题/摘要进详情） */
+/* aihot 式精选时间轴条目（纯文字流，点标题/摘要/推荐理由进详情） */
 function tlItem(c, uid, i){
-  const go = `location.hash='#c/${esc(encodeURIComponent(uid))}'`;
+  const go = ` data-go="#c/${esc(encodeURIComponent(uid))}"`;
   return `<article class="tl-item">
     <div class="tl-when">${String(i+1).padStart(2,'0')}</div>
     <div class="tl-meta"><span class="tl-badge">⭐ 编辑精选</span><span>来源：${esc(c.source_name||'')}</span>${c.category?`<span class="badge" style="margin-left:0">${esc(c.category)}</span>`:''}${starBtn(uid)}</div>
-    <div class="tl-title" onclick='${go}'>${esc(c.title)}</div>
-    <div class="tl-sum" onclick='${go}'>${esc(c.what)}</div>
-    <div class="tl-reason"><b>推荐理由：</b>${esc(c.featured_reason || c.why || '')}</div>
+    <div class="tl-title clicky"${go}>${esc(c.title)}</div>
+    <div class="tl-sum clicky"${go}>${esc(c.what)}</div>
+    <div class="tl-reason clicky"${go}><b>推荐理由：</b>${esc(c.featured_reason || c.why || '')}</div>
   </article>`;
 }
 
@@ -468,13 +472,13 @@ function viewHot(){
   + `<main class="wrap">
     <div class="sec"><span class="ic">🔥</span><h2>正在热议</h2><span class="note">点标题或说明看热点详情 · 热点是"现在进行时"，本榜永远展示当前 48 小时</span></div>
     ${(DATA.hot&&DATA.hot.length) ? DATA.hot.map(h=>{
-      const go = `location.hash='#h/${esc(encodeURIComponent(String(h.rank)))}'`;
+      const go = ` data-go="#h/${esc(encodeURIComponent(String(h.rank)))}"`;
       return `<article class="tl-item">
         <div class="tl-when" style="color:var(--sun);font-size:15px">${esc(h.rank)}</div>
         <div class="tl-meta"><span class="tl-badge score">🔥 热议第 ${esc(h.rank)} 名</span><span>${esc(h.sources||'?')} 个来源 · ${esc(h.participants||'?')} 人在聊（48 小时）</span></div>
-        <div class="tl-title" onclick='${go}'>${esc(h.one_line)}</div>
-        ${h.detail?`<div class="tl-sum" onclick='${go}'>${esc(h.detail)}</div>`:''}
-        ${h.kid_why?`<div class="tl-reason"><b>为什么和你有关：</b>${esc(h.kid_why)}</div>`:''}
+        <div class="tl-title clicky"${go}>${esc(h.one_line)}</div>
+        ${h.detail?`<div class="tl-sum clicky"${go}>${esc(h.detail)}</div>`:''}
+        ${h.kid_why?`<div class="tl-reason clicky"${go}><b>为什么和你有关：</b>${esc(h.kid_why)}</div>`:''}
       </article>`;}).join('') : '<div class="empty">今日热点榜整理中…</div>'}
     <div class="empty" style="border-style:solid;margin-top:14px">💡 热度榜由 AI HOT 统计 48 小时内多个信源的讨论量得出；不适合小朋友的话题已被自动过滤。</div>
   </main>`;
@@ -549,8 +553,8 @@ function viewStarred(){
       return `<article class="mini">
         ${c.image?`<img src="${esc(thumbOf(c.image))}" alt="" loading="lazy" decoding="async">`:`<div class="noimg">${esc(c.emoji||'🤖')}</div>`}
         <div style="flex:1">
-          <h4 class="clicky" onclick='location.hash="#c/${esc(encodeURIComponent(c.uid))}"'>${esc(c.title)}</h4><span class="badge">${esc(c.date)}</span>
-          <div class="oneliner clicky" onclick='location.hash="#c/${esc(encodeURIComponent(c.uid))}"'>${esc((c.what||'').slice(0,90))}…</div>
+          <h4 class="clicky" data-go="#c/${esc(encodeURIComponent(c.uid))}">${esc(c.title)}</h4><span class="badge">${esc(c.date)}</span>
+          <div class="oneliner clicky" data-go="#c/${esc(encodeURIComponent(c.uid))}">${esc((c.what||'').slice(0,90))}…</div>
           <div class="meta"><span>🛠️ ${esc(c.task_basic||'')}</span>
           ${c.featured_reason?`<span class="tl-reason" style="border-top:none;padding:0;display:inline"><b>推荐理由：</b>${esc(c.featured_reason.slice(0,40))}</span>`:''}
           <button class="btn" style="padding:2px 10px;font-size:12px;background:#b23a3a;color:#fff" data-unstar="${esc(c.uid)}">取消收藏</button></div>
