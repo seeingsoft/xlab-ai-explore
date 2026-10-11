@@ -77,20 +77,27 @@
            border-bottom:2px solid var(--line); position:sticky; top:var(--topbar-h); z-index:10;
            background:var(--canvas);}
 
-  /* ═══ aihot 式精选时间轴 ═══ */
+  /* ═══ aihot 式时间轴（统一双列结构：序号列 + 竖线轨道 + 卡片） ═══ */
   .hotstrip{display:flex; gap:8px; overflow-x:auto; padding:2px 0 12px;}
   .hotstrip .hs{flex:0 0 auto; display:flex; align-items:center; gap:8px; background:#fff; border:2px solid var(--line);
                 border-radius:99px; padding:4px 14px 4px 5px; font-size:13px; font-weight:600; text-decoration:none; color:var(--ink);}
   .hotstrip .hs .r{width:22px; height:22px; border-radius:99px; background:var(--sun); color:#5a3a10;
                    font-weight:900; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;}
   .hotstrip .hs span.t{white-space:nowrap; max-width:230px; overflow:hidden; text-overflow:ellipsis;}
-  .tl-item{position:relative; margin:0 0 16px 64px; padding:12px 16px; background:#fff;
-           border:2px solid var(--line); border-radius:14px;}
-  .tl-item::after{content:''; position:absolute; left:-33px; top:-16px; bottom:-16px; width:2px; background:var(--line);}
-  .tl-item:last-child::after{bottom:auto; height:30px;}
-  .tl-item::before{content:''; position:absolute; left:-38px; top:16px; width:10px; height:10px;
-                   border-radius:99px; background:var(--purple); box-shadow:0 0 0 3px var(--purple-soft); z-index:1;}
-  .tl-when{position:absolute; left:-64px; top:12px; width:48px; text-align:right; font-size:13px; font-weight:800; color:var(--muted);}
+  .tl-row{display:flex; align-items:flex-start;}
+  .tl-side{width:46px; flex-shrink:0; text-align:right; padding:12px 12px 0 0;
+           font-size:13.5px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.4;}
+  .tl-side.rank{color:var(--sun); font-size:16px;}
+  .tl-rail{width:18px; flex-shrink:0; position:relative; align-self:stretch; min-height:60px;}
+  .tl-rail::before{content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--line);}
+  .tl-row.first .tl-rail::before{top:21px;}
+  .tl-row.last .tl-rail::before{bottom:auto; height:21px;}
+  .tl-rail::after{content:''; position:absolute; left:4px; top:16px; width:10px; height:10px;
+                  border-radius:99px; background:var(--purple); box-shadow:0 0 0 3px var(--purple-soft); z-index:1;}
+  .tl-row.hot .tl-rail::after{background:var(--sun); box-shadow:0 0 0 3px var(--sun-soft);}
+  .tl-card{flex:1; min-width:0; background:#fff; border:2px solid var(--line); border-radius:14px;
+           padding:12px 16px; margin:0 0 16px 8px;}
+  .tl-card.bare{border:none; background:transparent; padding:0; margin:0 0 16px 8px;}
   .tl-meta{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
   .tl-badge{font-size:11px; font-weight:800; color:#fff; background:var(--purple); border-radius:99px; padding:1px 9px;}
   .tl-badge.score{background:var(--sun); color:#5a3a10;}
@@ -207,10 +214,11 @@
     .mobilebar{display:flex;}
     .bottomnav{display:flex;}
     :root{--topbar-h:52px;}
-    .tl-item{margin-left:40px; padding:10px 12px;}
-    .tl-item::after{left:-24px;}
-    .tl-item::before{left:-29px;}
-    .tl-when{left:-40px; width:32px; font-size:11px;}
+    .tl-side{width:32px; padding-right:7px; font-size:11.5px;}
+    .tl-rail{width:14px;}
+    .tl-rail::before{left:6px;}
+    .tl-rail::after{left:2px; top:14px; width:9px; height:9px;}
+    .tl-card{margin-left:6px;}
     .card{padding:18px 15px 13px;}
     body{font-size:15.5px;}
     footer{margin-bottom:76px;}
@@ -368,15 +376,18 @@ function miniCard(c, uid){
 }
 
 /* aihot 式精选时间轴条目（纯文字流，点标题/摘要/推荐理由进详情） */
-function tlItem(c, uid, i){
+function tlItem(c, uid, i, first, last){
   const go = ` data-go="#c/${esc(encodeURIComponent(uid))}"`;
-  return `<article class="tl-item">
-    <div class="tl-when">${String(i+1).padStart(2,'0')}</div>
-    <div class="tl-meta"><span class="tl-badge">⭐ 编辑精选</span><span>来源：${esc(c.source_name||'')}</span>${c.category?`<span class="badge" style="margin-left:0">${esc(c.category)}</span>`:''}${starBtn(uid)}</div>
-    <div class="tl-title clicky"${go}>${esc(c.title)}</div>
-    <div class="tl-sum clicky"${go}>${esc(c.what)}</div>
-    <div class="tl-reason clicky"${go}><b>推荐理由：</b>${esc(c.featured_reason || c.why || '')}</div>
-  </article>`;
+  return `<div class="tl-row${first?' first':''}${last?' last':''}">
+    <div class="tl-side">${String(i+1).padStart(2,'0')}</div>
+    <div class="tl-rail"></div>
+    <div class="tl-card">
+      <div class="tl-meta"><span class="tl-badge">⭐ 编辑精选</span><span>来源：${esc(c.source_name||'')}</span>${c.category?`<span class="badge" style="margin-left:0">${esc(c.category)}</span>`:''}${starBtn(uid)}</div>
+      <div class="tl-title clicky"${go}>${esc(c.title)}</div>
+      <div class="tl-sum clicky"${go}>${esc(c.what)}</div>
+      <div class="tl-reason clicky"${go}><b>推荐理由：</b>${esc(c.featured_reason || c.why || '')}</div>
+    </div>
+  </div>`;
 }
 
 /* 详情内页（优先当前数据，收藏的旧卡从本机快照渲染） */
@@ -423,7 +434,7 @@ function viewFeatured(){
     ${picksDays.filter(d=>d.picks.length).map(d=>`
       <div class="dayblock" id="day-${d.date}">
         <div class="dayhead"><span class="d">📅 ${esc(md(d.date))}</span><span class="w">${esc(wk(d.date))}</span><span class="n">${d.picks.length} 条精选</span></div>
-        ${d.picks.map((c)=>tlItem(c, uidOf(d.date, d.cards.indexOf(c)), d.picks.indexOf(c))).join('')}
+        ${d.picks.map((c,ri)=>tlItem(c, uidOf(d.date, d.cards.indexOf(c)), ri, ri===0, ri===d.picks.length-1)).join('')}
       </div>`).join('')}
     <div class="empty" style="border-style:solid">每天转译 ${'6-10'} 条，这里只放最值得看的 4 条 · <a href="#all" style="color:var(--sky)">看全部 ${TOTAL_CARDS} 张 →</a> · <a href="javascript:void(0)" onclick="loadRadarInto(this)" style="color:var(--sky)">家长角（原始新闻雷达）</a></div>
     <div id="radar"></div>
@@ -449,14 +460,20 @@ function viewAll(){
         ${REVERSED.map(d=>`<option value="${esc(d.date)}">${esc(md(d.date))} ${esc(wk(d.date))}（${d.cards.length} 张）</option>`).join('')}
       </select>
     </div>
-    ${REVERSED.filter(d=>d.cards.some(list)).map(d=>`
+    ${REVERSED.filter(d=>d.cards.some(list)).map(d=>{
+      const rows = d.cards.filter(list);
+      return `
       <div class="dayblock" id="day-${d.date}">
-        <div class="dayhead"><span class="d">📅 ${esc(md(d.date))}</span><span class="w">${esc(wk(d.date))}</span><span class="n">${d.cards.filter(list).length} 张卡</span></div>
-        ${d.cards.filter(list).map((c)=>{
+        <div class="dayhead"><span class="d">📅 ${esc(md(d.date))}</span><span class="w">${esc(wk(d.date))}</span><span class="n">${rows.length} 张卡</span></div>
+        ${rows.map((c,ri)=>{
           const i = d.cards.indexOf(c);
-          return miniCard(c, uidOf(d.date, i));
+          return `<div class="tl-row${ri===0?' first':''}${ri===rows.length-1?' last':''}">
+            <div class="tl-side">${String(i+1).padStart(2,'0')}</div>
+            <div class="tl-rail"></div>
+            <div class="tl-card bare">${miniCard(c, uidOf(d.date, i))}</div>
+          </div>`;
         }).join('')}
-      </div>`).join('') || '<div class="empty">时间轴正在搭建…</div>'}
+      </div>`;}).join('') || '<div class="empty">时间轴正在搭建…</div>'}
     <div class="empty" style="border-style:solid">最早回溯到 2026年9月12日 · 更早未收录 · 时间轴每天自动增长</div>
   </main>`;
 }
@@ -471,15 +488,18 @@ function viewHot(){
     `<div class="chips"><span class="chip">📅 ${esc(DATA.date)} 更新</span></div>`)
   + `<main class="wrap">
     <div class="sec"><span class="ic">🔥</span><h2>正在热议</h2><span class="note">点标题或说明看热点详情 · 热点是"现在进行时"，本榜永远展示当前 48 小时</span></div>
-    ${(DATA.hot&&DATA.hot.length) ? DATA.hot.map(h=>{
+    ${(DATA.hot&&DATA.hot.length) ? DATA.hot.map((h,hi)=>{
       const go = ` data-go="#h/${esc(encodeURIComponent(String(h.rank)))}"`;
-      return `<article class="tl-item">
-        <div class="tl-when" style="color:var(--sun);font-size:15px">${esc(h.rank)}</div>
-        <div class="tl-meta"><span class="tl-badge score">🔥 热议第 ${esc(h.rank)} 名</span><span>${esc(h.sources||'?')} 个来源 · ${esc(h.participants||'?')} 人在聊（48 小时）</span></div>
-        <div class="tl-title clicky"${go}>${esc(h.one_line)}</div>
-        ${h.detail?`<div class="tl-sum clicky"${go}>${esc(h.detail)}</div>`:''}
-        ${h.kid_why?`<div class="tl-reason clicky"${go}><b>为什么和你有关：</b>${esc(h.kid_why)}</div>`:''}
-      </article>`;}).join('') : '<div class="empty">今日热点榜整理中…</div>'}
+      return `<div class="tl-row hot${hi===0?' first':''}${hi===DATA.hot.length-1?' last':''}">
+        <div class="tl-side rank">${esc(h.rank)}</div>
+        <div class="tl-rail"></div>
+        <div class="tl-card">
+          <div class="tl-meta"><span class="tl-badge score">🔥 热议第 ${esc(h.rank)} 名</span><span>${esc(h.sources||'?')} 个来源 · ${esc(h.participants||'?')} 人在聊（48 小时）</span></div>
+          <div class="tl-title clicky"${go}>${esc(h.one_line)}</div>
+          ${h.detail?`<div class="tl-sum clicky"${go}>${esc(h.detail)}</div>`:''}
+          ${h.kid_why?`<div class="tl-reason clicky"${go}><b>为什么和你有关：</b>${esc(h.kid_why)}</div>`:''}
+        </div>
+      </div>`;}).join('') : '<div class="empty">今日热点榜整理中…</div>'}
     <div class="empty" style="border-style:solid;margin-top:14px">💡 热度榜由 AI HOT 统计 48 小时内多个信源的讨论量得出；不适合小朋友的话题已被自动过滤。</div>
   </main>`;
 }
