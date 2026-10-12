@@ -380,8 +380,29 @@
     #daypick .dp-panel{left:0; right:0; top:auto; bottom:0; transform:none; width:auto; max-height:76vh;
       border-radius:22px 22px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom)); animation:tbslide .22s ease;}
     #daypick .dp-grid{grid-template-columns:repeat(4, 1fr);}
-    .hero{padding:14px 0 12px; border-radius:0 0 18px 18px;}
+    .hero{padding:12px 0 10px; border-radius:0 0 18px 18px;}
     .sec{margin:22px 0 10px;}
+
+    /* ══ 手机端彻底优化（2026-10-12 江批，5 步） ══ */
+    /* Step1 卡片瘦身：列表卡只留 图＋标题＋一句话＋星标，其余收进详情页 */
+    .mini .tl-reason{display:none;}
+    .mini .meta{display:none;}
+    .mini .badge{display:none;}
+    .mini .badge.evb{display:inline-block;}
+    /* Step2 视觉减噪：详情大卡去边框去阴影、时间轴卡去掉外层"卡中卡" */
+    .card{border:none; box-shadow:none; padding:16px 14px 12px;}
+    .tl-card{border:none; background:transparent; padding:0; margin:0 0 12px 6px;}
+    .tl-card.bare{margin-bottom:12px;}
+    /* Step3 首屏精简：副标题单行截断、期号收起、提示条缩小 */
+    .hero h1 .iss{display:none;}
+    .hero .sub{font-size:12px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; opacity:.9;}
+    .hero .strip{margin-top:7px; font-size:11px; line-height:1.5;}
+    .chips{margin-top:6px; gap:5px;}
+    .chip{font-size:11px; padding:2px 8px;}
+    /* Step4 按钮瘦身：按钮缩小、来源行收起（页头已示来源，安全提示见首屏提示条） */
+    .btn{font-size:13px; padding:6px 13px;}
+    .acts{gap:7px; margin-top:12px;}
+    .guard{display:none;}
   }
 </style>
 </head>
