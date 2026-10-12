@@ -39,6 +39,7 @@
   .mobilebar img{width:28px; height:34px; object-fit:contain; border-radius:7px;}
   .mobilebar b{font-size:16.5px; color:var(--purple-deep); letter-spacing:.5px;}
   .mobilebar small{font-size:11px; color:var(--muted); margin-left:auto;}
+  .mobilebar .mb-star{font-size:19px; margin-left:10px; text-decoration:none; line-height:1;}
 
   /* ═══ 底部导航（手机） ═══ */
   .bottomnav{display:none; position:fixed; bottom:0; left:0; right:0; background:#fff;
@@ -393,7 +394,7 @@
   <div class="sb-foot">第 <span id="sb-issue">1</span> 期 · 已收录 <span id="sb-days">1</span> 天<br>时间轴每日自动增长</div>
 </nav>
 
-<div class="mobilebar"><img src="assets/xlab-logo.jpg" alt="xLab logo"><b>xLab-AI 探索报</b><small id="mb-issue">第 1 期</small></div>
+<div class="mobilebar"><img src="assets/xlab-logo.jpg" alt="xLab logo"><b>xLab-AI 探索报</b><small id="mb-issue">第 1 期</small><a class="mb-star" href="#starred" aria-label="我的收藏" title="我的收藏">⭐</a></div>
 
 <div class="main">
   <div id="view"></div>
@@ -402,7 +403,7 @@
       本页所有探索卡由 <b>AI 自动转译</b>生成，未经人工审核，可能存在错误 —— 发现错误欢迎告诉你的家长或老师，通过 <a href="https://seeingsoft.github.io/xlab-prototype/" target="_blank" rel="noopener noreferrer">xLab 平台</a>反馈纠错。<br>
       儿童卡内容为独立创作；新闻数据来源 <a href="https://aihot.news" target="_blank" rel="noopener noreferrer">AI HOT（aihot.news）</a>，原文版权归原作者与 AI HOT 所有。
     </div>
-    <div>xLab-AI 探索报 · 让每个孩子安全地看懂 AI 时代</div>
+    <div>xLab-AI 探索报 · 让每个孩子安全地看懂 AI 时代 · <a href="#about">关于探索报</a> · <a href="#starred">我的收藏</a></div>
   </footer>
 </div>
 
@@ -1062,7 +1063,8 @@ function render(){
   window.scrollTo(0,0);
 }
 document.getElementById('nav').innerHTML = NAV.map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
-document.getElementById('bottomnav').innerHTML = NAV.map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
+/* 手机底栏只保留 4 个内容入口（收藏→顶栏 ⭐，关于→页脚） */
+document.getElementById('bottomnav').innerHTML = NAV.filter(n=>['featured','all','hot','daily'].includes(n.hash)).map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
 document.addEventListener('click', e=>{
   const c = e.target.closest('[data-cat]');
   if (!c) return;
