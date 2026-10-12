@@ -70,8 +70,30 @@
 
   /* ═══ 时间轴 ═══ */
   .jumpbar{display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap;}
-  .jumpbar select{border:2px solid var(--line); border-radius:12px; padding:8px 12px; font-size:14px;
-                 background:#fff; color:var(--ink); font-weight:600; max-width:260px;}
+  /* ═══ 日期跳转面板（自绘选择器，替代原生下拉） ═══ */
+  .jumpbtn{border:2px solid var(--line); background:#fff; border-radius:12px; padding:8px 15px; font-size:14px;
+           font-weight:700; color:var(--ink); cursor:pointer; margin-left:auto;}
+  .jumpbtn:hover{border-color:var(--purple); color:var(--purple-deep); background:var(--purple-soft);}
+  #daypick{display:none; position:fixed; inset:0; z-index:998;}
+  #daypick.on{display:block;}
+  #daypick .dp-mask{position:absolute; inset:0; background:rgba(42,37,80,.42);}
+  #daypick .dp-panel{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(560px, 94vw);
+    max-height:78vh; overflow:auto; background:#fff; border-radius:22px; padding:20px 22px 16px;
+    box-shadow:0 18px 60px rgba(30,20,80,.35);}
+  #daypick .dp-close{position:absolute; right:14px; top:13px; border:none; background:var(--purple-soft);
+    color:var(--purple-deep); width:31px; height:31px; border-radius:99px; font-size:14px; cursor:pointer; font-weight:800;}
+  #daypick .dp-cat{font-size:12px; color:var(--muted); margin-bottom:10px;}
+  #daypick .dp-month{font-size:14px; font-weight:800; color:var(--purple-deep); margin:14px 0 8px;}
+  #daypick .dp-month:first-of-type{margin-top:2px;}
+  #daypick .dp-grid{display:grid; grid-template-columns:repeat(6, 1fr); gap:8px;}
+  #daypick .dp-day{border:2px solid var(--line); background:#fff; border-radius:12px; padding:6px 4px 5px;
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; transition:border-color .12s, background .12s;}
+  #daypick .dp-day b{font-size:15px; color:var(--ink); font-weight:800;}
+  #daypick .dp-day span{font-size:10.5px; color:var(--muted);}
+  #daypick .dp-day i{font-style:normal; font-size:10px; color:var(--purple);}
+  #daypick .dp-day:hover{border-color:var(--purple); background:var(--purple-soft);}
+  #daypick .dp-day.today{border-color:var(--sun); background:var(--sun-soft);}
+  #daypick .dp-day.today b{color:#b25a12;}
   .dayblock{margin-bottom:34px;}
   .dayhead{display:flex; align-items:baseline; gap:10px; margin-bottom:14px; padding:8px 10px 8px;
            border-bottom:2px solid var(--line); position:sticky; top:var(--topbar-h); z-index:10;
@@ -346,7 +368,10 @@
     .hot-meta{min-width:64px; font-size:11px;}
     .issue-head{padding:16px;}
     .stats{margin-left:0; gap:12px;}
-    .jumpbar select{max-width:100%; width:100%; margin-left:0 !important;}
+    .jumpbtn{margin-left:0; width:100%;}
+    #daypick .dp-panel{left:0; right:0; top:auto; bottom:0; transform:none; width:auto; max-height:76vh;
+      border-radius:22px 22px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom)); animation:tbslide .22s ease;}
+    #daypick .dp-grid{grid-template-columns:repeat(4, 1fr);}
     .hero{padding:14px 0 12px; border-radius:0 0 18px 18px;}
     .sec{margin:22px 0 10px;}
   }
@@ -740,10 +765,7 @@ function viewAll(){
     <div class="sec"><span class="ic">📋</span><h2>探索时间轴</h2><span class="note">按日期回看最近 60 天</span></div>
     <div class="jumpbar">
       <div class="catbar" style="margin:0">${CATS.map(c=>`<button class="${curCat===c?'on':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-      <select id="jump" onchange="jumpTo(this.value)" style="margin-left:auto">
-        <option value="">📅 跳转到日期…</option>
-        ${REVERSED.map(d=>`<option value="${esc(d.date)}">${esc(md(d.date))} ${esc(wk(d.date))}（${d.cards.length} 张）</option>`).join('')}
-      </select>
+      <button class="jumpbtn" onclick="openDayPicker()">📅 跳转到日期…</button>
     </div>
     ${REVERSED.filter(d=>d.cards.some(list)).map(d=>{
       const rows = d.cards.filter(list);
@@ -767,6 +789,34 @@ function jumpTo(ds){
   const el = document.getElementById('day-' + ds);
   if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+/* 日期跳转面板（自绘选择器，替代原生下拉）：按月分组、胶囊网格、点一下直达 */
+function openDayPicker(){
+  let box = document.getElementById('daypick');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'daypick';
+    box.innerHTML = '<div class="dp-mask"></div><div class="dp-panel" role="dialog" aria-label="跳转到日期"><button class="dp-close" aria-label="关闭">✕</button><div class="dp-cat">📅 跳到哪一天？</div><div class="dp-body"></div></div>';
+    document.body.appendChild(box);
+    box.querySelector('.dp-mask').addEventListener('click', hideDayPicker);
+    box.querySelector('.dp-close').addEventListener('click', hideDayPicker);
+    box.addEventListener('click', e=>{
+      const d = e.target.closest('.dp-day');
+      if (d && d.dataset.jump){ hideDayPicker(); jumpTo(d.dataset.jump); }
+    });
+  }
+  const byMonth = {};
+  DAYS.forEach(d => { const k = d.date.slice(0,7); (byMonth[k] = byMonth[k] || []).push(d); });
+  box.querySelector('.dp-body').innerHTML = Object.keys(byMonth).sort().reverse().map(k => {
+    const [y, m] = k.split('-');
+    const days = byMonth[k].slice().sort((a,b)=>b.date.localeCompare(a.date));
+    return `<div class="dp-month">${y} 年 ${+m} 月</div>
+      <div class="dp-grid">${days.map(d=>`<button class="dp-day${d.date===TODAY.date?' today':''}" data-jump="${esc(d.date)}"><b>${+d.date.slice(8)}日</b><span>${esc(wk(d.date).replace('星期','周'))}</span><i>${d.cards.length} 张</i></button>`).join('')}</div>`;
+  }).join('');
+  box.classList.add('on');
+}
+function hideDayPicker(){ const box = document.getElementById('daypick'); if (box) box.classList.remove('on'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ hideDayPicker(); hideTerm(); } });
 
 function viewHot(){
   const hot = DATA.hot || [];
