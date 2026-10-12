@@ -419,6 +419,21 @@
     .guard{display:none;}
   }
 </style>
+<!-- ANALYTICS:BEGIN -->
+<!-- 访问统计：百度统计（江 2026-10-12 接入；hash 路由切换补报 PV） -->
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?3f1d1837680ab82ca800d00f061957fd";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+window.addEventListener('hashchange', function () {
+  if (window._hmt) _hmt.push(['_trackPageview', location.href]);
+});
+</script>
+<!-- ANALYTICS:END -->
 </head>
 <body>
 
