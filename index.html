@@ -171,6 +171,7 @@
         border-bottom:2px dashed var(--purple); cursor:pointer; transition:background .15s;}
   .term:hover{background:#e0d8fa;}
   .b-glos{background:#e9f6ef;} .b-glos .tag{background:var(--leaf); color:#fff;}
+  .badge.evb{background:var(--sun-soft); color:#8a5a20;}
   /* 详情页双栏：左「为什么和你有关」＋右「名词小知识」（手机单列堆叠，见媒体查询） */
   .duo{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; align-items:start;}
   .duo.solo{grid-template-columns:1fr;}
@@ -742,23 +743,51 @@ function heroHead(title, sub, extra=''){
 
 function viewFeatured(){
   const hot5 = (DATA.hot||[]).slice(0,5);
-  const picksDays = REVERSED.map(d => ({date:d.date, cards:d.cards, picks:d.cards.slice(0, Math.min(4, d.cards.length))}));
+  /* ── 常青卡池：从往期全部卡按「常青分＋每日轮换扰动」排序（排除今天——今天归探索日报/时间轴）── */
+  const hashCode = s => { let h = 0; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+  const pool = [];
+  DAYS.forEach(d => {
+    if (d.date === TODAY.date) return;
+    d.cards.forEach((c, i) => {
+      const ev = c.evergreen;
+      if (!ev || Number(ev.score) < 60) return;
+      const uid = uidOf(d.date, i);
+      pool.push({c, uid, date: d.date, k: Number(ev.score) - (hashCode(uid + DATA.date) % 14)});
+    });
+  });
+  pool.sort((a,b)=>b.k-a.k);
+  const picks = pool.slice(0, 48);
   return heroHead(`xLab-AI 探索报 <span class="iss">第 ${DATA.issue||1} 期</span>`,
-    '每天 3 分钟，看懂 AI 界的大事 —— 发生了什么 · 为什么和你有关 · 你可以动手做什么',
-    `<div class="chips"><span class="chip">📅 ${esc(TODAY.date)}</span><span class="chip">🃏 今日 ${TODAY.cards.length} 张卡</span><span class="chip">🗂️ 时间轴已收录 ${TOTAL_CARDS} 张</span></div>
-     <div class="strip">✦ 每张探索卡由 AI 从当日新闻自动转译，可能有错误，欢迎纠错 ✦ 原始新闻是给大人看的，点开前请家长陪同 ✦</div>`)
+    '🌟 值得回看：从往期所有探索卡里，挑出最值得给孩子看的一批（不限今天、每天轮换）',
+    `<div class="chips"><span class="chip">📅 ${esc(TODAY.date)}</span><span class="chip">🆕 今日新增 ${TODAY.cards.length} 条</span><span class="chip">🗂️ 已收录 ${TOTAL_CARDS} 张</span></div>
+     <div class="strip">✦ 今天的新内容在「探索日报」和「全部动态」✦ 每张卡由 AI 从公开新闻自动转译，可能有错误，欢迎纠错 ✦ 原始新闻是给大人看的，点开前请家长陪同 ✦</div>`)
   + `<main class="wrap">
     <div class="sec"><span class="ic">🔥</span><h2>当前热点</h2><span class="note"><a href="#hot" style="color:var(--sky)">完整榜单 →</a></span></div>
     ${hot5.length ? `<div class="hotstrip">${hot5.map(h=>`<a class="hs" href="#hot"><span class="r">${esc(h.rank)}</span><span class="t">${esc((h.one_line||'').slice(0,20))}</span></a>`).join('')}</div>` : ''}
-    <div class="sec"><span class="ic">🗂️</span><h2>精选时间轴</h2><span class="note">每天最值得看的 4 条 · 点标题或摘要看详情</span></div>
-    ${picksDays.filter(d=>d.picks.length).map(d=>`
-      <div class="dayblock" id="day-${d.date}">
-        <div class="dayhead"><span class="d">📅 ${esc(md(d.date))}</span><span class="w">${esc(wk(d.date))}</span><button class="btn btn-read day-play" data-playday="day-${d.date}" data-kind="pick" data-lbl="🔊 听我读">🔊 听我读</button><span class="n">${d.picks.length} 条精选</span></div>
-        ${d.picks.map((c,ri)=>tlItem(c, uidOf(d.date, d.cards.indexOf(c)), ri, ri===0, ri===d.picks.length-1)).join('')}
-      </div>`).join('')}
-    <div class="empty" style="border-style:solid">每天转译 ${'6-10'} 条，这里只放最值得看的 4 条 · <a href="#all" style="color:var(--sky)">看全部 ${TOTAL_CARDS} 张 →</a> · <a href="javascript:void(0)" onclick="loadRadarInto(this)" style="color:var(--sky)">家长角（原始新闻雷达）</a></div>
+    <div class="sec"><span class="ic">🌟</span><h2>值得回看</h2><span class="note">往期最值得看的 ${picks.length} 张 · 每天轮换 · 点卡片看详情</span></div>
+    ${picks.length ? picks.map(p=>everCard(p)).join('') : '<div class="empty">🌟 回看池整理中（正在给往期卡片打分），先去探索日报看看今天的内容吧</div>'}
+    <div class="empty" style="border-style:solid">今天新转译的内容 → <a href="#daily" style="color:var(--sky)">探索日报</a> · <a href="#all" style="color:var(--sky)">全部动态（时间轴）</a> · <a href="javascript:void(0)" onclick="loadRadarInto(this)" style="color:var(--sky)">家长角（原始新闻雷达）</a></div>
     <div id="radar"></div>
   </main>`;
+}
+/* 「值得回看」条目卡：左图右文 + 常青标签 + 回看理由 */
+function everCard(p){
+  const c = p.c, uid = p.uid;
+  const go = ` data-go="#c/${esc(encodeURIComponent(uid))}"`;
+  const img = c.image ? `<img src="${esc(thumbOf(c.image))}" alt="${esc(c.title)}插图" loading="lazy" decoding="async">`
+    : `<div class="noimg">${esc(c.emoji||'🤖')}</div>`;
+  return `<article class="mini">
+    ${img}
+    <div style="flex:1">
+      <h4 class="clicky"${go}>${esc(c.title)}</h4>${c.category?`<span class="badge">${esc(c.category)}</span>`:''} <span class="badge evb">🌟 值得回看</span> ${starBtn(uid)}
+      <div class="oneliner clicky"${go}>${esc((c.what||'').slice(0,90))}…</div>
+      ${(c.evergreen&&c.evergreen.why)?`<div class="tl-reason clicky"${go} style="border-top:none;padding-top:2px;margin:-2px 0 4px"><b>🌟 为什么值得回看：</b>${esc(c.evergreen.why)}</div>`:''}
+      <div class="meta"><span>📅 ${esc(md(p.date))}</span>
+        <a class="btn btn-orig" style="padding:2px 10px;font-size:12px" href="${esc(c.original_url||'#')}" target="_blank" rel="noopener noreferrer">原文↗</a>
+        <button class="btn btn-read" data-lbl="🔊 读" style="padding:2px 10px;font-size:12px" data-audio="${esc(c.audio||'')}" data-speak="${esc(c.body||c.what||'')}${esc(c.why||'')}">🔊 读</button>
+      </div>
+    </div>
+  </article>`;
 }
 function loadRadarInto(el){
   const box = document.getElementById('radar');
