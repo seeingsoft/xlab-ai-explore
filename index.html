@@ -143,6 +143,26 @@
   .b-what{background:var(--purple-soft);} .b-what .tag{background:var(--purple); color:#fff;}
   .b-why{background:var(--sun-soft);}  .b-why .tag{background:var(--sun); color:#5a3a10;}
   .b-task{background:var(--leaf-soft);} .b-task .tag{background:var(--leaf); color:#fff;}
+
+  /* ═══ 名词小知识（正文色块 + 点击弹窗 + 详情页汇总块） ═══ */
+  .term{background:#efeafd; color:var(--purple-deep); font-weight:700; border-radius:6px; padding:0 5px;
+        border-bottom:2px dashed var(--purple); cursor:pointer; transition:background .15s;}
+  .term:hover{background:#e0d8fa;}
+  .b-glos{background:#e9f6ef;} .b-glos .tag{background:var(--leaf); color:#fff;}
+  .glos-item{display:flex; gap:9px; padding:6px 0; border-top:1px dashed #cfe9dc; font-size:14.5px; line-height:1.65;}
+  .glos-item:first-of-type{border-top:none; padding-top:2px;}
+  .glos-item b{color:#1c7a4f; flex-shrink:0; white-space:nowrap;}
+  #termbox{display:none; position:fixed; inset:0; z-index:999;}
+  #termbox.on{display:block;}
+  #termbox .tb-mask{position:absolute; inset:0; background:rgba(42,37,80,.42);}
+  #termbox .tb-panel{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(430px, 92vw);
+    background:#fff; border-radius:20px; padding:24px 24px 20px; box-shadow:0 18px 60px rgba(30,20,80,.35);}
+  #termbox .tb-close{position:absolute; right:12px; top:11px; border:none; background:var(--purple-soft);
+    color:var(--purple-deep); width:31px; height:31px; border-radius:99px; font-size:14px; cursor:pointer; font-weight:800;}
+  #termbox .tb-cat{font-size:12px; color:var(--muted); margin-bottom:9px;}
+  #termbox .tb-term{font-size:21px; color:var(--purple-deep); display:block; margin-bottom:7px;}
+  #termbox .tb-explain{font-size:16.5px; line-height:1.78; color:var(--ink);}
+  @keyframes tbslide{from{transform:translateY(45%); opacity:.5} to{transform:translateY(0); opacity:1}}
   .task-row{display:flex; gap:10px; flex-wrap:wrap;}
   .task{flex:1 1 240px; background:#fff; border:1.5px solid #cfe9dc; border-radius:12px; padding:9px 13px; font-size:14.5px;}
   .task b{color:var(--leaf);}
@@ -317,6 +337,10 @@
     .hrow-right .havs{display:none;}
     .hrow-right svg, .hrow-right .twait{display:none;}
     .hhero-img img{max-height:250px;}
+    /* 名词弹窗：手机改底部滑出面板 */
+    #termbox .tb-panel{left:0; right:0; top:auto; bottom:0; transform:none; width:auto;
+      border-radius:22px 22px 0 0; padding:20px 18px calc(22px + env(safe-area-inset-bottom)); animation:tbslide .22s ease;}
+    .term{padding:0 4px;}
     .hot-item{gap:10px; padding:12px;}
     .hot-rank{min-width:34px; font-size:19px;}
     .hot-meta{min-width:64px; font-size:11px;}
@@ -370,6 +394,27 @@ const NAV = [
 ];
 const esc = s => {const d=document.createElement('div'); d.textContent=(s==null?'':String(s)); return d.innerHTML;};
 const paras = (src, st) => (src||'').split(/\n+/).map(s=>s.trim()).filter(Boolean).map(p=>`<p style="${st}">${esc(p)}</p>`).join('');
+
+/* 名词色块标注：每个术语只在全文第一次出现处上色块（长词优先；\uE000 占位符防二次匹配，esc 后保留） */
+function annotate(src, gl){
+  const list = ((gl||[]).filter(g=>g&&g.term&&g.explain)).slice().sort((a,b)=>b.term.length-a.term.length);
+  let text = src || '';
+  const marks = [];
+  list.forEach(g=>{
+    const i = text.indexOf(g.term);
+    if (i < 0) return;
+    text = text.slice(0, i) + '\uE000' + marks.length + '\uE001' + text.slice(i + g.term.length);
+    marks.push(g);
+  });
+  return text.split(/\n+/).map(s=>s.trim()).filter(Boolean).map(p=>{
+    let html = esc(p);
+    marks.forEach((g, idx)=>{
+      html = html.replace('\uE000'+idx+'\uE001',
+        `<span class="term" data-term="${esc(g.term)}" data-explain="${esc(g.explain)}">${esc(g.term)}</span>`);
+    });
+    return `<p style="margin:0 0 9px">${html}</p>`;
+  }).join('');
+}
 const CATS = ['全部','模型','产品','行业','论文','教程','观点'];
 const WEEK = '日一二三四五六';
 const md = ds => { const [,m,d] = ds.split('-'); return `${+m}月${+d}日`; };
@@ -488,6 +533,27 @@ function playClip(src, done){
   a.play().catch(fin);
 }
 
+/* 名词小知识弹窗（手机底部滑出 / 桌面居中浮窗） */
+function showTerm(term, explain){
+  let box = document.getElementById('termbox');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'termbox';
+    box.innerHTML = '<div class="tb-mask"></div><div class="tb-panel" role="dialog" aria-label="名词解释"><button class="tb-close" aria-label="关闭">✕</button><div class="tb-cat">📚 名词小知识</div><b class="tb-term"></b><div class="tb-explain"></div></div>';
+    document.body.appendChild(box);
+    box.querySelector('.tb-mask').addEventListener('click', hideTerm);
+    box.querySelector('.tb-close').addEventListener('click', hideTerm);
+  }
+  box.querySelector('.tb-term').textContent = term;
+  box.querySelector('.tb-explain').textContent = explain || '';
+  box.classList.add('on');
+}
+function hideTerm(){ const box = document.getElementById('termbox'); if (box) box.classList.remove('on'); }
+document.addEventListener('click', e=>{
+  const tm = e.target.closest('.term');
+  if (tm) showTerm(tm.dataset.term, tm.dataset.explain);
+});
+
 /* 单条朗读 */
 document.addEventListener('click', e=>{
   const btn = e.target.closest('.btn-read');
@@ -555,7 +621,7 @@ function bigCard(c, uid, showDate){
   return `<article class="card">
     <div class="head"><span class="emoji">${esc(c.emoji)}</span><h3>${esc(c.title)}${c.category?`<span class="badge">${esc(c.category)}</span>`:''}${showDate?`<span class="badge" style="background:var(--sun-soft);color:#8a5a20">${esc(showDate)}</span>`:''}</h3>${starBtn(uid)}</div>
     ${c.image?`<img class="cover" src="${esc(c.image)}" alt="${esc(c.title)}的漫画插图" loading="lazy">`:''}
-    <div class="blk b-what"><span class="tag">📰 发生了什么大事</span>${paras(c.body||c.what, 'margin:0 0 9px')}</div>
+    <div class="blk b-what"><span class="tag">📰 发生了什么大事</span>${annotate(c.body||c.what, c.glossary)}</div>
     <div class="blk b-why"><span class="tag">💡 为什么和你有关</span><p>${esc(c.why)}</p></div>
     ${c.featured_reason?`<div class="tl-reason" style="margin:2px 0 6px"><b>推荐理由：</b>${esc(c.featured_reason)}</div>`:''}
     <div class="blk b-task"><span class="tag">🛠️ 你可以动手做什么</span>
@@ -564,6 +630,9 @@ function bigCard(c, uid, showDate){
         <div class="task"><b>进阶任务（13-16岁）</b><br>${esc(c.task_advanced)}</div>
       </div></div>
     <details class="deep"><summary>🔭 深一层（给 13-16 岁）</summary><div class="inner">${esc(c.deep_dive)}</div></details>
+    ${(c.glossary&&c.glossary.length)?`<div class="blk b-glos"><span class="tag">📚 名词小知识</span>
+      ${c.glossary.map(g=>`<div class="glos-item"><b>${esc(g.term)}</b><span>${esc(g.explain)}</span></div>`).join('')}
+    </div>`:''}
     <div class="acts">
       <button class="btn btn-read" data-lbl="🔊 听我读" data-audio="${esc(c.audio||'')}" data-speak="${esc(c.body||c.what||'')}${esc(c.why||'')}">🔊 听我读</button>
       <a class="btn btn-orig" href="${esc(c.original_url)}" target="_blank" rel="noopener noreferrer">看原始新闻 ↗</a>
@@ -754,8 +823,11 @@ function viewHotCard(rankStr){
     <article class="card">
       ${h.image?`<img class="cover" src="${esc(h.image)}" alt="${esc(h.one_line)} 插画" loading="lazy" decoding="async"><div class="tl-reason" style="border-top:none;margin:6px 0 12px;font-size:11.5px">🎨 这张插画由探索报用 AI 为第 1 名热点绘制</div>`:''}
       <div class="tl-reason" style="border-top:none;margin-bottom:12px"><b>大家讨论的原话题：</b>${esc(h.title)}</div>
-      ${bodySrc.trim()?`<div class="blk b-what"><span class="tag">📰 这是怎么回事</span>${paras(bodySrc, 'margin:0 0 9px')}</div>`:''}
+      ${bodySrc.trim()?`<div class="blk b-what"><span class="tag">📰 这是怎么回事</span>${annotate(bodySrc, h.glossary)}</div>`:''}
       ${h.kid_why?`<div class="blk b-why"><span class="tag">💡 为什么和你有关</span><p>${esc(h.kid_why)}</p></div>`:''}
+      ${(h.glossary&&h.glossary.length)?`<div class="blk b-glos"><span class="tag">📚 名词小知识</span>
+        ${h.glossary.map(g=>`<div class="glos-item"><b>${esc(g.term)}</b><span>${esc(g.explain)}</span></div>`).join('')}
+      </div>`:''}
       <div class="tl-reason" style="margin:4px 0 10px"><b>上榜理由：</b>过去 48 小时里，${esc(h.sources||'多个')} 个不同来源、${esc(h.participants||'许多')} 位参与者都在讨论这件事（讨论热度 ${esc(h.heat||'—')}＝来源数×6＋讨论信号×4＋参与人数×2，探索报按 AI HOT 公开数据自算）。</div>
       ${hasTrend?`<div class="tl-reason" style="border-top:none;margin:0 0 10px"><b>名次走势（探索报每 2 小时记录）：</b><div style="margin-top:5px">${trendSvg(h, 264, 54)}</div></div>`:''}
       ${h.media&&h.media.length?`<div class="tl-reason" style="border-top:none;margin-bottom:10px"><b>正在讨论它的媒体：</b>${esc(h.media.join('、'))}</div>`:''}
