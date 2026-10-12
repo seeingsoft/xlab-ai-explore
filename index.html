@@ -14,7 +14,7 @@
     --sbw:224px; --topbar-h:0px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  body{font-family:"Yuanti SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
        background:var(--canvas); color:var(--ink); line-height:1.75; font-size:16.5px;}
 
   /* ═══ 左侧菜单 ═══ */
@@ -173,6 +173,20 @@
   .term:hover{background:#e0d8fa;}
   .b-glos{background:#e9f6ef;} .b-glos .tag{background:var(--leaf); color:#fff;}
   .badge.evb{background:var(--sun-soft); color:#8a5a20;}
+  /* ═══ 听我读·整期连播页 ═══ */
+  .listen-hero{background:#fff; border:2px solid var(--line); border-radius:20px; padding:20px 18px; text-align:center; margin-bottom:16px;}
+  .listen-big{background:var(--purple); color:#fff; border:none; border-radius:99px; font-size:17px; font-weight:800;
+              padding:13px 32px; cursor:pointer; font-family:inherit;}
+  .listen-big.playing{background:#b23a3a;}
+  .listen-note{font-size:12.5px; color:var(--muted); margin-top:11px; line-height:1.6;}
+  .listen-row{display:flex; align-items:center; gap:12px; background:#fff; border:2px solid var(--line);
+              border-radius:14px; padding:10px 14px; margin-bottom:10px;}
+  .listen-row.playing-now{outline:3px solid var(--sun); outline-offset:2px;}
+  .listen-row .l-no{font-size:20px; font-weight:900; color:#ff9f43; min-width:36px; font-variant-numeric:tabular-nums;}
+  .listen-row .l-mid{flex:1; min-width:0;}
+  .listen-row .l-mid b{display:block; font-size:15.5px; color:var(--ink);}
+  .listen-row .l-mid span{display:block; font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
+  .listen-row .l-btn{flex-shrink:0; font-size:12.5px; padding:5px 12px;}
   /* 详情页双栏：左「为什么和你有关」＋右「名词小知识」（手机单列堆叠，见媒体查询） */
   .duo{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; align-items:start;}
   .duo.solo{grid-template-columns:1fr;}
@@ -563,10 +577,13 @@ function resetReadButtons(){
     if (b.dataset.lbl) b.textContent = b.dataset.lbl;
   });
   document.querySelectorAll('.playing-now').forEach(x=>x.classList.remove('playing-now'));
+  const lb = document.getElementById('listen-all');
+  if (lb){ lb.classList.remove('playing'); lb.textContent = '▶ 再听一遍'; }
 }
 function stopAll(){
   if (xlabAudio){ xlabAudio.pause(); xlabAudio = null; }
   if (daySession){ daySession.active = false; daySession = null; }
+  if (listenSession){ listenSession.active = false; listenSession = null; }
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   resetReadButtons();
 }
@@ -651,6 +668,51 @@ function playNextInDay(){
     else if (card){ speakText((card.what||'') + (card.why||''), cont); }
     else cont();
   });
+}
+
+/* ── 听我读·整期连播页（长图"听我读"二维码入口；#listen 或 #listen/<date>）── */
+let listenSession = null;   /* {list:[{audio,idx}], i, btn, active} */
+function viewListen(dateArg){
+  const day = (dateArg && DAYS.find(d=>d.date===dateArg)) || DAYS[DAYS.length-1];
+  if (!day || !day.cards.length) return heroHead('🎧 听我读', '') + `<main class="wrap"><div class="empty">这一天还没有内容</div></main>`;
+  const cards = day.cards;
+  const withAudio = cards.filter(c=>c.audio).length;
+  const mins = Math.max(3, Math.round(cards.length * 1.8));
+  return heroHead('🎧 听我读 · 探索报', `${esc(md(day.date))} ${esc(wk(day.date))} · ${cards.length} 条 · 约 ${mins} 分钟`, '')
+  + `<main class="wrap">
+    <div class="listen-hero">
+      <button class="listen-big" id="listen-all" onclick="startListenPlay('${esc(day.date)}')">▶ 开始听今天（${cards.length} 条）</button>
+      <div class="listen-note">${withAudio===cards.length ? `共 ${cards.length} 条语音，会一条接一条自动播下去` : `${withAudio}/${cards.length} 条有语音`} · 语音由 AI 合成（晓伊姐姐/云夏哥哥）· 请家长把音量调合适</div>
+    </div>
+    ${cards.map((c,i)=>`<div class="listen-row" id="lrow-${i}">
+      <span class="l-no">${String(i+1).padStart(2,'0')}</span>
+      <div class="l-mid"><b>${esc(c.title)}</b><span>${esc((c.what||'').slice(0,46))}…</span></div>
+      <button class="btn btn-read l-btn" data-lbl="▶ 听这条" data-audio="${esc(c.audio||'')}" data-speak="${esc(c.body||c.what||'')}${esc(c.why||'')}">▶ 听这条</button>
+    </div>`).join('')}
+    <div class="empty" style="border-style:solid;margin-top:14px">🎧 小朋友可以闭上眼睛听：一条播完会自动播下一条</div>
+  </main>`;
+}
+function startListenPlay(dateStr){
+  const btn = document.getElementById('listen-all');
+  if (btn && btn.classList.contains('playing')){ stopAll(); return; }
+  stopAll();
+  const day = DAYS.find(d=>d.date===dateStr);
+  if (!day) return;
+  const list = day.cards.map((c,i)=>({audio:c.audio, idx:i})).filter(x=>x.audio);
+  if (!list.length) return;
+  listenSession = {list, i:0, btn, active:true};
+  if (btn){ btn.classList.add('playing'); btn.textContent = `⏹ 播放中 0/${list.length}`; }
+  listenNext();
+}
+function listenNext(){
+  const s = listenSession; if (!s || !s.active) return;
+  document.querySelectorAll('.listen-row.playing-now').forEach(x=>x.classList.remove('playing-now'));
+  if (s.i >= s.list.length){ stopAll(); return; }
+  const item = s.list[s.i];
+  if (s.btn) s.btn.textContent = `⏹ 播放中 ${s.i+1}/${s.list.length}`;
+  const row = document.getElementById('lrow-' + item.idx);
+  if (row){ row.classList.add('playing-now'); row.scrollIntoView({behavior:'smooth', block:'center'}); }
+  playClip(item.audio, ()=>{ if (listenSession && listenSession.active){ listenSession.i++; setTimeout(listenNext, 550); } });
 }
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-playday]');
@@ -981,6 +1043,7 @@ function viewDaily(){
         <div><b>${(DATA.hot||[]).length}</b>条热议</div>
         <div><b>约${mins}</b>分钟读完</div>
       </div>
+      <div style="flex-basis:100%; margin-top:12px"><a class="btn btn-read" href="#listen/${esc(TODAY.date)}" style="text-decoration:none">🎧 听整期（${TODAY.cards.length} 条语音连播）</a></div>
     </div>
     <div class="sec"><span class="ic">📖</span><h2>本期全部</h2><span class="note">${esc(TODAY.date)} ${esc(wk(TODAY.date))}</span></div>
     ${TODAY.cards.map((c,i)=>bigCard(c, uidOf(TODAY.date, i))).join('')}
@@ -1069,6 +1132,7 @@ function currentRoute(){
   const h = location.hash.slice(1);
   if (h.startsWith('c/')) return {view:'card', uid: decodeURIComponent(h.slice(2))};
   if (h.startsWith('h/')) return {view:'hotcard', rank: decodeURIComponent(h.slice(2))};
+  if (h === 'listen' || h.startsWith('listen/')) return {view:'listen', date: decodeURIComponent(h.slice(7))};
   const v = h || 'featured';
   return {view: NAV.some(n=>n.hash===v) ? v : 'featured'};
 }
@@ -1076,7 +1140,7 @@ function render(){
   const r = currentRoute();
   const views = {featured:viewFeatured, all:viewAll, hot:viewHot, daily:viewDaily, starred:viewStarred, about:viewAbout};
   document.getElementById('view').innerHTML = r.view === 'card' ? viewCard(r.uid)
-    : r.view === 'hotcard' ? viewHotCard(r.rank) : (views[r.view]||viewFeatured)();
+    : r.view === 'hotcard' ? viewHotCard(r.rank) : r.view === 'listen' ? viewListen(r.date) : (views[r.view]||viewFeatured)();
   document.querySelectorAll('.nav a, .bottomnav a').forEach(a=>a.classList.toggle('on', a.dataset.hash===r.view));
   document.getElementById('sb-issue').textContent = DATA.issue||1;
   document.getElementById('sb-days').textContent = DAYS.length;
