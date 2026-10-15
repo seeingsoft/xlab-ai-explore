@@ -467,11 +467,12 @@ window.addEventListener('hashchange', function () {
 const DATA = JSON.parse(document.getElementById('cards-data').textContent);
 const DAYS = (DATA.days && DATA.days.length) ? DATA.days : (DATA.cards ? [{date: DATA.date, cards: DATA.cards}] : []);
 const TODAY = DAYS.length ? DAYS[DAYS.length-1] : {date: DATA.date, cards: []};
+/* 电脑端侧栏从上到下顺序＝本数组顺序（江 2026-10-15 令：热点榜、探索日报、精选、全部动态、我的收藏、关于） */
 const NAV = [
-  {hash:'featured', ic:'🗂️', label:'精选'},
-  {hash:'all',      ic:'📋', label:'全部动态'},
   {hash:'hot',      ic:'🔥', label:'热点榜'},
   {hash:'daily',    ic:'📖', label:'探索日报'},
+  {hash:'featured', ic:'🗂️', label:'精选'},
+  {hash:'all',      ic:'📋', label:'全部动态'},
   {hash:'starred',  ic:'⭐', label:'我的收藏'},
   {hash:'about',    ic:'💡', label:'关于'},
 ];
@@ -1163,8 +1164,8 @@ function render(){
   window.scrollTo(0,0);
 }
 document.getElementById('nav').innerHTML = NAV.map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
-/* 手机底栏只保留 4 个内容入口（收藏→顶栏 ⭐，关于→页脚） */
-document.getElementById('bottomnav').innerHTML = NAV.filter(n=>['featured','all','hot','daily'].includes(n.hash)).map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
+/* 手机底栏只保留 4 个内容入口（收藏→顶栏 ⭐，关于→页脚）；顺序独立定于此、不随电脑端侧栏变化 */
+document.getElementById('bottomnav').innerHTML = ['featured','all','hot','daily'].map(h=>NAV.find(n=>n.hash===h)).map(n=>`<a href="#${n.hash}" data-hash="${n.hash}"><span class="ic">${n.ic}</span>${n.label}</a>`).join('');
 document.addEventListener('click', e=>{
   const c = e.target.closest('[data-cat]');
   if (!c) return;
