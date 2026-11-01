@@ -453,9 +453,10 @@
     text-decoration:none; white-space:nowrap; overflow:hidden;
     transition:all .25s cubic-bezier(.34,1.56,.64,1);
     -webkit-tap-highlight-color:transparent;}
-  .home-fab .ico{font-size:15px;}
+  .home-fab .fablogo{width:22px;height:22px;object-fit:cover;border-radius:6px;flex:none;display:block;border:1.5px solid #111;background:#fff;}
   .home-fab .txt{display:inline-block; max-width:120px; opacity:1; transform:none; transition:all .2s;}
-  .home-fab.shrink{padding:10px; border-radius:50%;}
+  .home-fab.shrink{width:46px; height:46px; padding:8px; border-radius:50%; justify-content:center; gap:0;}
+  .home-fab.shrink .fablogo{width:26px; height:26px; border-radius:50%;}
   .home-fab.shrink .txt{max-width:0; opacity:0; margin-left:-6px; transform:translateX(6px);}
   @media (min-width:861px){ .home-fab{bottom:24px;} } /* 电脑端无底栏，贴低一点 */
   /* 页脚静态入口：虚线分隔 + 提问 + 黄底胶囊按钮 */
@@ -501,7 +502,7 @@ window.addEventListener('hashchange', function () {
     <!-- ═══ HOME-ENTRY:BEGIN task-20262755 页脚静态入口（读完 10 条的自然落点；跳转地址见页尾 JS 的 XLAB_HOME_URL） ═══ -->
     <div class="f-home">
       <p class="ask">想跟着 AI 大事一起上课？</p>
-      <a class="f-home-btn" id="f-home-btn" href="#">🏠 xLab 课堂 · 报名中的课程在这里</a>
+      <a class="f-home-btn" id="f-home-btn" href="#"><img src="assets/xlab-logo.jpg" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:4px;vertical-align:-4px;margin-right:3px;border:1px solid #111;">xLab 课堂 · 报名中的课程在这里</a>
     </div>
     <!-- ═══ HOME-ENTRY:END ═══ -->
     <div class="f-decl">
@@ -515,7 +516,7 @@ window.addEventListener('hashchange', function () {
 <nav class="bottomnav" id="bottomnav"></nav>
 
 <!-- ═══ HOME-ENTRY:BEGIN task-20262755 右下角悬浮胶囊（当日页与 #listen 连播共用同一 DOM，全局在场；点击跳家庭端首页） ═══ -->
-<a class="home-fab" id="home-fab" href="#" aria-label="回 xLab 课堂"><span class="ico">🏠</span><span class="txt">xLab 课堂</span></a>
+<a class="home-fab" id="home-fab" href="#" aria-label="回 xLab 课堂"><img class="fablogo" src="assets/xlab-logo.jpg" alt="xLab"><span class="txt">xLab 课堂</span></a>
 <!-- ═══ HOME-ENTRY:END ═══ -->
 
 <script type="application/json" id="cards-data">
