@@ -113,6 +113,11 @@
            background:var(--canvas);}
 
   /* ═══ aihot 式时间轴（统一双列结构：序号列 + 竖线轨道 + 卡片） ═══ */
+  /* task-20262767：横滑条"可滑"渐隐提示——右缘 40px 白色渐变 overlay，滑到最右端时消失 */
+  .hotstrip-wrap{position:relative;}
+  .hotstrip-wrap::after{content:''; position:absolute; top:0; right:0; bottom:0; width:40px; pointer-events:none;
+                        background:linear-gradient(to right, rgba(247,246,255,0), var(--canvas)); transition:opacity .25s;}
+  .hotstrip-wrap.end::after{opacity:0;}
   .hotstrip{display:flex; gap:8px; overflow-x:auto; padding:2px 0 12px;}
   .hotstrip .hs{flex:0 0 auto; display:flex; align-items:center; gap:8px; background:#fff; border:2px solid var(--line);
                 border-radius:99px; padding:4px 14px 4px 5px; font-size:13px; font-weight:600; text-decoration:none; color:var(--ink);}
@@ -197,7 +202,8 @@
   .listen-row .l-no{font-size:20px; font-weight:900; color:#ff9f43; min-width:36px; font-variant-numeric:tabular-nums;}
   .listen-row .l-mid{flex:1; min-width:0;}
   .listen-row .l-mid b{display:block; font-size:15.5px; color:var(--ink);}
-  .listen-row .l-mid span{display:block; font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
+  .listen-row .l-mid span{display:-webkit-box; font-size:12.5px; color:var(--muted); -webkit-line-clamp:2;
+                          -webkit-box-orient:vertical; overflow:hidden; line-height:1.45; margin-top:2px;}
   .listen-row .l-btn{flex-shrink:0; font-size:12.5px; padding:5px 12px;}
   /* 详情页双栏：左「为什么和你有关」＋右「名词小知识」（手机单列堆叠，见媒体查询） */
   .duo{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; align-items:start;}
@@ -310,7 +316,9 @@
            font-variant-numeric:tabular-nums;}
   .hrow.top .hrow-no{color:#e8590c;}
   .hrow-mid{flex:1; min-width:0;}
-  .hrow-t{font-size:15.5px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  /* task-20262767：单行省略 → 最多两行折行（-webkit-line-clamp:2） */
+  .hrow-t{font-size:15.5px; font-weight:800; color:var(--ink); display:-webkit-box; -webkit-line-clamp:2;
+          -webkit-box-orient:vertical; overflow:hidden; line-height:1.4;}
   .hrow-t:hover{color:var(--purple-deep);}
   .hrow-s{font-size:13px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;}
   .hrow-right{display:flex; align-items:center; gap:10px;}
@@ -914,7 +922,7 @@ function viewFeatured(){
      <div class="strip">✦ 今天的新内容在「探索日报」和「全部动态」✦ 每张卡由 AI 从公开新闻自动转译，可能有错误，欢迎纠错 ✦ 原始新闻是给大人看的，点开前请家长陪同 ✦</div>`)
   + `<main class="wrap">
     <div class="sec"><span class="ic">🔥</span><h2>当前热点</h2><span class="note"><a href="#hot" style="color:var(--sky)">完整榜单 →</a></span></div>
-    ${hot5.length ? `<div class="hotstrip">${hot5.map(h=>`<a class="hs" href="#hot"><span class="r">${esc(h.rank)}</span><span class="t">${esc((h.one_line||'').slice(0,20))}</span></a>`).join('')}</div>` : ''}
+    ${hot5.length ? `<div class="hotstrip-wrap"><div class="hotstrip">${hot5.map(h=>`<a class="hs" href="#hot"><span class="r">${esc(h.rank)}</span><span class="t">${esc((h.one_line||'').slice(0,20))}</span></a>`).join('')}</div></div>` : ''}
     <div class="sec"><span class="ic">🌟</span><h2>值得回看</h2><span class="note">往期最值得看的 ${picks.length} 张 · 每天轮换 · 点卡片看详情</span></div>
     ${picks.length ? picks.map(p=>everCard(p)).join('') : '<div class="empty">🌟 回看池整理中（正在给往期卡片打分），先去探索日报看看今天的内容吧</div>'}
     <div class="empty" style="border-style:solid">今天新转译的内容 → <a href="#daily" style="color:var(--sky)">探索日报</a> · <a href="#all" style="color:var(--sky)">全部动态（时间轴）</a> · <a href="javascript:void(0)" onclick="loadRadarInto(this)" style="color:var(--sky)">家长角（原始新闻雷达）</a></div>
@@ -1226,6 +1234,16 @@ document.addEventListener('click', e=>{
   render();
 });
 window.addEventListener('hashchange', render);
+/* task-20262767：热点横滑条滑到最右端 → 渐隐提示消失；往回滚 → 重现。
+   scroll 不冒泡，用 document 捕获阶段委托，视图重渲染后无需重新绑定。 */
+document.addEventListener('scroll', function(e){
+  var el = e.target;
+  if (!el || !el.classList || !el.classList.contains('hotstrip')) return;
+  var wrap = el.parentElement;
+  if (!wrap || !wrap.classList.contains('hotstrip-wrap')) return;
+  var atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2;
+  wrap.classList.toggle('end', atEnd);
+}, {capture:true, passive:true});
 render();
 </script>
 <script>
